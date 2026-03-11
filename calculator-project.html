@@ -130,7 +130,7 @@ pieChart.style.background = `conic-gradient(
                     </ol>
             <li><h3>6. Screenshots</h3></li>
                 <div class="screenshots">
-                    <a href="Sci-fi Calculator 1.jpg"><img src="Sci-fi Calculator 1.jpg" alt=""></a>
+                    <img src="Sci-fi Calculator 1.jpg" alt="">
                     <img src="Sci-fi Calculator 2.jpg" alt="">
                     <img src="Sci-fi Calculator 3.png" alt="">
                     <img src="Sci-fi Calculator 3.jpg" alt="">
@@ -141,10 +141,13 @@ pieChart.style.background = `conic-gradient(
                 <a href="https://github.com/MisaelCM950/Sci-fi-Calorie-Calculator/tree/main/Calculator"><img src="GitHub Logo.png" alt=""></a>
             </div>
         </div>
-        
+        <div id="lightbox" class="lightbox">
+            <span class="close-btn">&times;</span>
+            <img  class="lightbox-content" id="lightbox-img" src="" alt="">
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="Calculator.js"></script>
+    <script src="lightbox.js"></script>
 </body>
 
 </html>
