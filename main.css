@@ -147,3 +147,6 @@ pre{
     font-size: 50px;
     cursor: pointer;
 }
+li{
+    margin-bottom: 10px;
+}

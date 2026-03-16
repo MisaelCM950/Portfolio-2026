@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISA</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+            <a href="" class="nav-link">Story</a>
+            <a href="/Projects/projects-tab.html" class="nav-link">Projects</a>
+            <a href="/home-page.html" class="nav-link">Home</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <h2>1.MISA Chat Bot</h2>
+            <ul>
+                <li><h3> 1.What does the tool do? </h3>
+                    <p>Misa is a sci-fi themed AI assistant featuring a custom, futuristic persona. It’s designed to assist 
+                    users with daily tasks while providing an immersive, interactive narrative experience.</p>
+                </li>
+                <li><h3>2. Why I built it:</h3>
+                    <p>I built Misa to bridge the gap between front-end and design and back-end logic. My primary goals 
+                    were to learn how to connect a web application to a third-party AI API (OpenAI), understand how 
+                    to secure sensitive credentials, and practice integrating dynamic AI features into a project. I 
+                    also wanted to push my HTML, CSS and JavaScript skills by building a complex, real-time chat 
+                    interface.</p>
+                </li>
+                <li><h3>3. How it works:</h3>
+                    <ul>
+                        <li>
+                            <strong>For the user:</strong> <br> Users interact with Misa through a custom chat window. 
+                            They can type messages to trigger an audio-visual response, engaging in complex 
+                            conversations powered by the gpt-4o-mini model.
+                        </li> 
+                        
+                    <li>
+                            <strong>Technical:</strong> <br> The front-end captures the user’s 
+                            input and sends it to a secure Netlify Serverless Function. This back-end server secretly 
+                            injects the current date and Misa’s system “prompt” before securely passing the request to 
+                            OpenAI. The AI’s response is sent back to the front-end, where JavaScript dynamically 
+                            generates new HTML div elements and injects them into the DOM to display the conversation.
+                        </li> 
+                        
+                            
+                    </ul>  
+                </li>
+                <li><h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>Dynamic DOM Manipulation::</strong> <pre class="code-box"><code class="language-javascript">// User Message
+async function sendMessage(){
+    
+let newBubble = document.createElement("div");
+newBubble.classList.add("message","user-message")
+newBubble.textContent = text;
+chatWindow.appendChild(newBubble);
+chatWindow.scrollTop = chatWindow.scrollHeight;
+}</code></pre>Because a chat history is unpredictable, I couldn’t hardcode the HTML. I had to learn how to use 
+JavaScript to dynamically create <code>div</code> elements with <code>document.createElement</code>, assign them CSS classes on the fly, and 
+append them to the chat window every time a message was sent or received.
+                        </li>
+                        <li>
+                            <strong>Interactive Audio:</strong >
+<pre class="code-box">
+<code class="language-javascript">
+// Declaring variable for sound
+const messageSound = new Audio('loadingRobot.mp3')
+messageSound.preload = "auto";
+// Play when user sends a message and check if browser blocked the sound
+messageSound.currentTime = 0;
+messageSound.play().catch(error =>{
+console.error("Broswer blocked the audio", error);
+});</code>
+</pre>Handling media in JavaScript was a new hurdle. I had to implement logic to trigger an audio file upon user 
+interaction, and specifically learn how to reset the audio track <code>currentTime = 0</code> so it could play rapidly in 
+succession without glitching.
+                        </li>
+                        <li>
+                            <strong>API Security & Server Migration:</strong> I initially hosted the site on GitHub pages but quickly learned about automated scraper bots that steal
+ exposed API keys. I had to migrate my architecture to Netlify to utilize a secure back-end environment, storing my 
+ OpenAI key safely in an Environment Variable.
+                        </li>
+                    </ol>
+                </li>
+                <li><h3>5. What I learned:</h3>
+                    <ol>
+                        <li>
+                            <strong>Client vs. Server Architecture: </strong>  I gained a deep understanding of the 
+                            difference between front-end (what the user sees) and back-end (where secrets are kept). 
+                            I now know how to secure an application against cyber attacks using environment variables.
+                        </li>
+                        <li>
+                            <strong>Cloud Infrastructure:</strong>I learned the physical reality of the internet—that 
+                            the “cloud” consists of massive data centers running enterprise-grade “pizza-box” servers
+                             with specialized RAM, designed to run 24/7 for decades.
+                        </li>
+                        <li>
+                            <strong>Advanced JavaScript:</strong>I leveled up my JavaScript skills by 
+                            mastering DOM injection, handling asynchronous API fetch request, and manipulating media.
+                        </li>
+                        <li>
+                            <strong>Asynchronous Programming:</strong>I mastered the use of <code>async</code> and <code>await</code> to handle
+                            blocking API requests. This allows the application to communicate with external servers in the
+                            background without freezing the User Interface, ensuring a fluid and professional 'real-time'
+                            experience.
+                        </li>
+                        <li>
+                            <strong>Prompt Engineering & AI Integration:</strong>I learned how to architect a master 
+                            “System Prompt” to give an AI a distinct personality, constraints, and lore. I also learned
+                             how to dynamically inject JavaScript date objects into the prompt to fix AI time 
+                             hallucinations.
+                        </li>
+                        <li>
+                            <strong>Mobile Layout and CSS Flexbox:</strong>I overcame complex mobile responsiveness 
+                            bugs, learning how to manage viewport height(dvh), prevent iOS auto-zooming when clicking
+                            the input box, and structure flexbox columns for a native app-like behavior.
+                        </li>
+                    </ol>
+                </li>
+            <li><h3>6. Screenshots</h3>
+                <div class="screenshots">
+                    <img src="AI Chatbot.png" alt="">
+                    <img src="Misa Chatbot 2.jpg" alt="">
+                    <img src="Misa Chatbot 3.jpg" alt="">
+                </div>
+            </li>
+            </ul>
+            <div class="code">
+                <p>Want to Check the Code?</p>
+                <a href="https://github.com/MisaelCM950/Sci-fi-Calorie-Calculator/tree/main/Misa"><img src="/Projects/GitHub Logo.png" alt=""></a>
+            </div>
+        </div>
+        <div id="lightbox" class="lightbox">
+            <span title="Close" class="close-btn">&times;</span>
+            <img  class="lightbox-content" id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+
+</html>
+
