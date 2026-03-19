@@ -7,19 +7,30 @@ body{
 .cards-container{
     display: flex;
     gap: 40px;
+    padding: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 .cards{
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     background-color: #003262;
     border: 5px solid #0061bd;
     border-radius: 20px;
+    overflow: hidden;
+    transition: 0.3s;
+}
+.cards:hover{
+    transform: translateY(-10px);
+    box-shadow: 0 0 20px #002242;
 }
 .logo{
     width: 100%;
-
+    height: auto;
+    display: block;
 }
 .headers{
     border-top: 2px solid #0061bd;
@@ -31,11 +42,18 @@ body{
 p a{
     text-decoration: none;
     color:#FDB515;
+    
+    font-weight: bold;
+    transition: 0.3s;
+}
+p a:hover{
     border-bottom: 2px solid;
 }
 p{
     color: white;
+    line-height: 1.6;
 }
 .description{
     padding:10px;
+    text-align: center;
 }
