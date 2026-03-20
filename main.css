@@ -74,13 +74,19 @@ ul{
     border-bottom: 2px solid #A31F34;
     padding-bottom: 20px;
 }
-.screenshots img{
+.screenshots img,
+.screenshots video {
     width: 100%;
     filter: grayscale(20%);
     transition: filter 0.3s ease;
-    border: 1px solid #ddd;
+    border: 1px solid #6d6d6d;
     cursor: pointer;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
 
+}
+.screenshots video:hover{
+    filter: grayscale(0%);
 }
 .screenshots img:hover{
     filter: grayscale(0%);

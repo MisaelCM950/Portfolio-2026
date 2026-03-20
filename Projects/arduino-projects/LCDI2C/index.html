@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sensor Hub with Multi-State UI</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+            <a href="/index.html" class="nav-link">Home</a>
+            <a href="" class="nav-link">Story</a>
+            <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <h2>1.Interactive Sensor Hub with Multi-State UI</h2>
+            <ul>
+                <li><h3> 1.What does the tool do? </h3>
+                    <p>A standalone embedded system that utilizes an Ultrasonic Sensor and DHT11 to monitor
+                         environmental data. The system features a custom-built, three-page user interface 
+                         (Menu, Radar, Weather) navigated via a physical analog joystick, with integrated 
+                         safety logic and acoustic alerts.</p>
+                 </li>
+                <li><h3>2. Why I built it:</h3>
+                    <p>I wanted to push beyond basic “input-output” sketches and move into System Architecture. 
+                        My goal was to master I2C communication, complex nested logic, and state management in 
+                        C++, creating a project that demonstrates my ability to solve real-world hardware/software 
+                        interface problems.</p>
+                </li>
+                <li><h3>3. How it works:</h3>
+                <ul>
+                    <li>
+                        <strong>For the user:</strong> <br> The LCD displays a “Home” menu. The user “toggles” 
+                        modes by flicking the joystick. Right enters Radar Mode (Live distance tracking in cm/in
+                         with a proximity alarm). Left enters Weather Mode (Live Temp/Humidity). A return flick 
+                         brings the user back to the Home menu.
+                    </li> 
+                       
+                    <li><strong>Technical:</strong> <br>
+                        
+                            <ol>
+                                <li><strong>The Brain:</strong> The Arduino processes analog signals from a joystick (A0) 
+                                    and digital signals from the Ultrasonic and DH11 sensors.
+                                </li>
+                                <li><strong>Communication: </strong> I used the “Wire.h” and “LiquidCrystal_I2C” 
+                                    libraries to manage data transmission over the I2C bus, significantly reducing 
+                                    the number of wires needed for the display.
+                                </li>
+                                <li>
+                                    <strong>Distance Logic:</strong> The system calculates distance my measuring the 
+                                    Pulse-In duration of an ultrasonic wave and converting time into distance using 
+                                    the speed of sound (Distance = Time*0.034/2).
+                                </li>    
+                            </ol>
+                    </li>
+                    
+                        
+                </ul>   
+                <li><h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>The “Flicker” Problem: </strong> <pre class="code-box"><code class="language-javascript">// Logic to handle Feet/Inches vs Centimeters
+bool warningActive = false;
+if (distanceCm <= 10 && distanceCm > 0) {
+    if(!warningActive) {
+      myScreen.clear();
+      myScreen.setCursor(3, 0);
+      myScreen.print("TOO CLOSE!");
+      myScreen.setCursor(4, 1);
+      myScreen.print("BACK UP!");
+      warningActive = true;
+    }
+    digitalWrite(myBuzzer, HIGH);
+    delay(100);
+    digitalWrite(myBuzzer, LOW);
+    delay(100);
+
+  }
+    else {
+    if(warningActive){
+      myScreen.clear();
+      warningActive = false;
+      digitalWrite(myBuzzer, LOW);
+    }
+</code></pre>The standard code cleared the screen every loop, causing a violent flicker that makes the text 
+unreadable. I implemented a <code>Boolean</code> Guard <code>warningActive</code>. By checking the state of the guard before clearing the 
+screen, I ensured the <code>clear()</code> command only runs once at the moment the proximity threshold is crossed. This resulted
+in a rock-solid, static UI.
+                        </li>
+                        <li>
+                            <strong>State Management: </strong >
+<pre class="code-box">
+<code class="language-javascript">
+// Example with page 0
+ if(currentPage == 0){
+    if(xVal > 800){
+      currentPage = 1;
+      myScreen.clear();
+    }
+    if(xVal< 200){
+      currentPage = 2;
+      myScreen.clear();
+    }
+  } else if(currentPage == 1){
+    if(xVal < 200){
+      currentPage= 0;
+      myScreen.clear();
+      warningActive = false;
+    }
+  } else if(currentPage == 2){
+    if(xVal > 800){
+      currentPage = 0;
+      myScreen.clear();
+    }
+  }
+</code>
+</pre> <ul>
+                                <li><strong>The Problem:</strong> I needed to create a seamless user 
+                                    interface that allowed a user to navigate between three distinct “modes” 
+                                    (Menu, Radar, Weather) without the logic for one mode interfering with another. 
+                                    Initially, using simple if statements caused the screen to flicker and sensor to 
+                                    trigger incorrectly because the Arduino was try trying to run all code at once. 
+                                </li>
+                                <li><strong>The Solution: </strong> I implemented a State Machine architecture. 
+                                    I defined a global variable <code>currentPage</code> to act as the ”State.” By wrapping 
+                                    my sensor and display logic in <code>if(currentPage == x)</code> blocks, I ensured that the
+                                     CPU only processed the code relevant to the active screen.
+                                </li>
+                                <li>
+                                    <strong>The Result:</strong> This created a rock-solid environment where the 
+                                    joystick functioned as a high-speed toggle, providing a clean, professional 
+                                    “App-like” experience on a low-power microcontroller.
+                                </li>    
+                            </ul>
+                            <li>
+                                <strong>Mechanical Failure & Iteration:</strong> During the transition from the 
+                                breadboard to a physical cardboard enclosure, I experienced hardware failure (broken 
+                                DHT11 pins) and spatial constraints. I used this as a learning moment to study 
+                                enclosure ergonomics and design.
+                            </li>
+                        </li>
+                        
+                    </ol>
+                </li>
+                <li><h3>5. What I learned:</h3>
+                    <ol>
+                        <li>
+                            <strong>Nested Logic: </strong>  Learned “State-Machine” style programming using nested 
+                            <code>if/else</code> structures to manage different “pages” of a UI.
+                        </li>
+                        <li>
+                            <strong>Data Types: </strong>Learned the importance of using <code>float</code> for precision 
+                            measurements and <code>long</code> for time-based durations to prevent data overflow.
+                        </li>
+                        <li>
+                            <strong>UI/UX Design: </strong>Designed a “sticky” toggle for the joystick, 
+                            so the user doesn’t have to hold the stick in place to view a page—enhancing the overall user experience.
+                        </li>
+                    </ol>
+                </li>
+            <li><h3>6. Screenshots</h3>
+                <div class="screenshots">
+                    <img src="circuit-tinkercad.jpg" alt="tinkercad-circuit" title="Circuit Schematic">
+                    <img src="hello-mit.jpeg" alt="hello-MIT-text">
+                    <img src="mid-process.jpeg" alt="mid-process-of-the-project">
+                    <video controls class="screenshot-img" title="Video Demonstration">
+                        <source src="finalVideo.mp4" type="video/mp4"> 
+                            Your browser does not support the video tag.
+                    </video>
+                </div>
+            </li>
+            </ul>
+            <div class="code">
+                <p>Want to Check the Code?</p>
+                <a href="https://github.com/MisaelCM950/Sci-fi-Calorie-Calculator/tree/main/Calculator"><img src="/Projects/GitHub Logo.png" alt=""></a>
+            </div>
+        </div>
+        <div id="lightbox" class="lightbox">
+            <span title="Close" class="close-btn">&times;</span>
+            <img class="lightbox-content" id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+
+</html>
+
