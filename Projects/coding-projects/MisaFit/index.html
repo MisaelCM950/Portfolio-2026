@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MisaFit</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+            <a href="/index.html" class="nav-link">Home</a>
+            <a href="" class="nav-link">Story</a>
+            <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <h2>1. MisaFit</h2>
+            <ul>
+                <li><h3>1. What does the tool do?</h3>
+                    <p>MisaFit is a mobile application featuring a futuristic, sci-fi HUD interface designed for macronutrient and calorie tracking to help users hit their fitness goals.</p>
+                </li>
+                
+                <li><h3>2. Why I built it:</h3>
+                    <p>As a frequent user of standard tracking apps like MyFitnessPal, I wanted access to premium features like voice logging, fast barcode scanning, and quick-add macros. Instead of paying for a subscription, I decided to build my own ecosystem. This project was born out of a desire to own my health data, push my technical limits by learning mobile development from scratch, and actively reinforce my identity as a builder who creates solutions rather than just consuming them.</p>
+                </li>
+                
+                <li><h3>3. How it works:</h3>
+                    <ul>
+                        <li>
+                            <strong>For the user:</strong> <br> 
+                            <ul style="list-style:disc; padding-left: 30px;">
+                                <li><strong>Multi-Modal Logging:</strong> Users can log food via a traditional search bar, by adding their own custom calories and macros, by scanning a barcode using the native device camera, by asking AI to estimate the calories of a certain food, or by speaking naturally into the microphone.</li>
+                                <li><strong>Dynamic Math Engine:</strong> Users can select custom quantities and units of measurement (grams, ounces, scoops, slices) while the UI instantly recalculates the macros in real-time.</li>
+                                <li><strong>Daily & Historical Tracking:</strong> Features an interactive calendar and a dashboard that tracks daily caloric and macronutrient progress against customizable user goals.</li>
+                            </ul>
+                        </li> 
+                    </ul> 
+                    <ul>
+                        <li>
+                            <strong>Technical Architecture & Orchestration:</strong> <br>
+                            <ul style="list-style:disc; padding-left: 30px;">
+                                <li>The application is built on React Native and TypeScript, utilizing a complex system of API orchestration to route user intents to the correct backend service:</li>
+                                <ol>
+                                    <li><strong>FatSecret API:</strong> Powers the primary text search and nutritional database.</li>
+                                    <li><strong>OpenFoodFacts API:</strong> Handles the native camera barcode scanning feature.</li>
+                                    <li><strong>OpenAI Whisper:</strong> Processes audio files for highly accurate speech-to-text transcription.</li>
+                                    <li><strong>OpenAI GPT-4o-mini:</strong> Handles the analytical estimation for custom food entries.</li>
+                                </ol>
+                                
+                                <li><strong>Memory Management & Asset Preloading:</strong> To create a highly immersive aesthetic, I generated custom sci-fi backgrounds using AI. To prevent "white flashes" during screen transitions:</li>
+                                <ol>
+                                    <li><strong>Pre-Fetching to RAM:</strong> Upon opening the app, a custom boot screen holds the user while <code>Asset.loadAsync</code> manually pre-loads all background files directly into the device's temporary memory (RAM).</li>
+                                    <li><strong>Hardware-Accelerated Rendering:</strong> I utilized the <code>expo-image</code> library wrapping a root container with <code>StyleSheet.absoluteFillObject</code>. By enforcing a <code>memory-disk</code> cache policy, the application instantly retrieves the pre-loaded images from RAM, resulting in zero-latency screen transitions.</li>
+                                </ol>
+
+                                <li><strong>Offline-first Architecture & Local Persistence:</strong> To guarantee a seamless user experience regardless of network connectivity, the application caches all historical meal data locally using <code>@react-native-async-storage/async-storage</code>.</li>
+                                <ol>
+                                    <li><strong>Reactive Background Saving:</strong> Instead of manually triggering save commands on UI buttons, I engineered a reactive <code>useEffect</code> hook that constantly monitors the global state. Whenever the user updates a goal or logs a food, the app automatically serializes the complex arrays into strings (<code>JSON.stringify</code>) and writes them to the local disk in the background.</li>
+                                    <li><strong>Asynchronous State Hydration:</strong> Upon app launch, an initialization sequence reads the persistent storage, parses the data back into usable objects (<code>JSON.parse</code>), and hydrates the app’s context. Because this system strictly utilizes asynchronous promises (<code>async/await</code>), the disk I/O operations never block the main thread.</li>
+                                </ol>
+                            </ul>
+                        </li> 
+                    </ul>  
+                </li>
+                
+                <li><h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>Parsing Unstructured API Data: Regular Expressions (Regex)</strong><br>
+                            The FatSecret API does not return macros as cleanly separated JSON numbers. Instead, it returns a single, unstructured string of text (e.g., <i>"Per 100g - Calories: 250kcal | Fat: 10g | Carbs: 30g"</i>). I engineered a series of Regular Expressions (Regex) with Capture Groups to parse the string, ignore unpredictable spacing, and capture only the mathematical values.
+<pre class="code-box"><code class="language-javascript">// 1. Define the Regex patterns using Capture Groups
+const calMatch = foodDescription.match(/Calories:\s*([\d.]+)\s*kcal/i);
+const fatMatch = foodDescription.match(/Fat:\s*([\d.]+)\s*g/i);
+const servingMatch = foodDescription.match(/Per\s*([\d.]+)\s*([a-zA-Z]+)/i);
+
+// 2. Extract the numbers safely, falling back to 0 if API omitted them
+return { 
+    baseCalories: calMatch ? parseFloat(calMatch[1]) : 0, 
+    baseFat: fatMatch ? parseFloat(fatMatch[1]) : 0, 
+    servingSize: servingMatch ? parseFloat(servingMatch[1]) : 100, 
+    servingName: servingMatch ? servingMatch[2] : 'g' 
+};</code></pre>
+                        </li>
+
+                        <li>
+                            <strong>Data Normalization & Dynamic Math Engine</strong><br>
+                            Once the string was parsed, the next hurdle was normalizing highly unpredictable unit types. A single food item might return its serving size as “1 slice,” “30 grams,” or “1 scoop.” I engineered a custom math hook (<code>useFoodSettings</code>) that converts all base measurements to a standardized gram weight, utilizing a "fallback multiplier" to safely estimate weight if the API failed to provide it. This allowed the interface to dynamically scale proteins, fats, and carbs safely without undefined data crashing the app.
+                        </li>
+
+                        <li>
+                            <strong>Global State Management & Prop Drilling</strong><br>
+                            In React Native, applications are structured like a multi-story house. Modals float "above" the main dashboard. Passing data manually down the component tree (a localized anti-pattern known as “Prop Drilling”) creates brittle, heavily coupled code. I solved this by building an "intercom system" using the React Context API.
+<pre class="code-box"><code class="language-javascript">// The Global Network (The Intercom)
+const FoodContext = createContext&lt;FoodContextType | undefined&gt;(undefined);
+
+export function FoodProvider({ children }) { 
+    const [allMeals, setAllMeals] = useState&lt;Meal[]&gt;([]); 
+    
+    // Centralized CRUD Operations 
+    const addMeal = (food: Meal) => setAllMeals(prev => [...prev, food]); 
+    const deleteMeal = (id: string) => setAllMeals(prev => prev.filter(m => m.id !== id)); 
+    const updateMeal = (updatedFood: Meal) => setAllMeals(prev => prev.map(m => m.id === updatedFood.id ? updatedFood : m)); 
+    
+    return( 
+        // Broadcasting the state and the functions to the entire app 
+        &lt;FoodContext.Provider value={{ allMeals, addMeal, deleteMeal, updateMeal }}&gt; 
+            {children} 
+        &lt;/FoodContext.Provider&gt; 
+    );
+}</code></pre>
+                            I applied this exact same pattern to build a <code>SoundContext</code> at the absolute root of the app, creating a persistent global audio player that allowed UI sound effects to run smoothly across screen transitions without cutting off.
+                        </li>
+
+                        <li>
+                            <strong>Vendor Evaluation & API Orchestration</strong><br>
+                            To solve the "cold start" database problem, I approached API integration iteratively. I began by mocking a local database, then tested OpenFoodFacts and the USDA API before strategically mapping APIs to their strengths: FatSecret for text search, OpenFoodFacts for barcodes, and OpenAI for voice transcription. I utilized AI (LLMs) as a pair-programming partner to rapidly engineer strict parsing functions for the wildly different JSON response formats.
+                        </li>
+                    </ol>
+                </li>
+                
+                <li><h3>5. What I learned:</h3>
+                    <ol>
+                        <li><strong>Mobile Architecture:</strong> Transitioning from web to mobile, I learned how to manage complex component lifecycles, build native layouts, implement swipeable UI actions, and compile builds using Expo Go.</li>
+                        <li><strong>State & Data Management:</strong> I mastered using strict TypeScript interfaces to handle messy API arrays and learned how to safely manage complex, interconnected state logic across multiple screens and storage layers.</li>
+                        <li><strong>System Integration:</strong> I learned the real-world challenges of connecting multiple distinct APIs, handling asynchronous background fetch requests, and orchestrating different endpoints into one seamless, fast user experience.</li>
+                        <li><strong>Component-Driven Refactoring:</strong> I mastered the art of refactoring massive, cluttered files into clean, reusable UI components and custom React hooks, making the codebase modular and readable.</li>
+                    </ol>
+                    <p>To conquer the steep learning curve of React Native, I practiced <strong>"Rubber Duck Debugging"</strong>—verbally explaining my code line-by-line out loud—and forced myself to manually rewrite complex logic until the syntax became muscle memory. By pushing through the initial friction, I transformed my understanding of code from scattered syntax into a cohesive model of mobile architecture.</p>
+                </li>
+                
+                <li><h3>6. Screenshots</h3>
+                    <div class="screenshots">
+                        <img src="loadingScreen.png" alt="Loading Screen">
+                        <img src="menu.PNG" alt="Menu">
+                        <img src="menuAdded.PNG" alt="Breakfast Added">
+                        <img src="customScreen.PNG" alt="Custom Food">
+                        <img src="goals.PNG" alt="Goal Settings">
+                        <img src="macros.PNG" alt="Macros">
+                        <img src="food-add.PNG" alt="Added Food">
+                        <img src="add-food.PNG" alt="Add Food Screen">
+                        <video controls style="width: 100%;
+                            filter: grayscale(20%);
+                            transition: filter 0.3s ease;
+                            border: 1px solid #6d6d6d;
+                            cursor: pointer;
+                            aspect-ratio: 9 / 16;
+                            object-fit:contain;" title="Video Demonstration">
+                        <source src="ScreenRecording_04-24-2026 20-12-44_1 (online-video-cutter.com).mp4" type="video/mp4"> 
+                            Your browser does not support the video tag.
+                        </video>       
+                    </div>
+                </li>
+            </ul>
+            <div class="code">
+                <p>Want to Check the Code?</p>
+                <a href="https://github.com/MisaelCM950/SciFiApp"><img src="/Projects/GitHub Logo.png" alt=""></a>
+            </div>
+        </div>
+        <div id="lightbox" class="lightbox">
+            <span title="Close" class="close-btn">&times;</span>
+            <img  class="lightbox-content" id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+
+</html>
+
