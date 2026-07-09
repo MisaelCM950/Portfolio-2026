@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tool Deck</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+            <a href="/index.html" class="nav-link">Home</a>
+            <a href="" class="nav-link">Story</a>
+            <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <h2>1. Interactive Tool Deck</h2>
+            <ul>
+                <li><h3> 1.What does the tool do? </h3>
+                    <p>A hardware-controlled web
+                    dashboard that allows a user to interact with their computer screen entirely
+                    via a physical infrared (IR) Arduino remote control. The system features two
+                    core applications: a fully operational grid-navigated Calculator and a Media Deck
+                    that controls desktop Spotify in real time.</p>
+                 </li>
+                <li><h3>2. Why I built it:</h3>
+                    <p>I built this platform to bridge
+                    the gap between physical hardware components and modern web software. While I
+                    wanted to deepen my understanding of microcontrollers like the Arduino UNO and components
+                    like IR Receivers, my primary goal was learning how to establish a low-latency
+                    communication pipeline between local hardware and a browser-based user
+                    interface.</p>
+                </li>
+                <li><h3>3. How it works:</h3>
+                <ul>
+                    <li>
+                        The system boots up into a selection
+                        menu. The user navigates the desktop layout using the remote’s directional
+                        arrow keys.
+                    </li> 
+                       
+                    <li>
+                        <strong>For the user:</strong><br>
+                        The Calculator: The user
+                        navigates smoothly through a responsive button grid. Pressing <code>“OK”</code> keys in inputs, triggering navigation
+                        sound effects, and computing complex text equations.
+                        <br><br>
+                        The Music Deck:  It offers a split screen-layout. The web
+                        dashboard acts as a dedicated hardware deck while desktop Spotify snaps to the
+                        other half of the monitor. Users can visually cycle through custom UI panels to
+                        track-skip, play, pause, or alter the volume.
+                    </li>
+
+                    <li><strong>Technical:</strong> <br>
+                            <ol>
+                                <li><strong>Hardware Layer:</strong> An IR
+                                receiver module captures physical infrared light waves, converts them to Hexadecimal
+                                code strings <code>“0xB54AFF00”</code>, and streams them over a USB serial connection <code>“COM6”</code>
+                                at a <code>“9600”</code> baud rate using the Arduino IDE.</li>
+                                <li><strong>Backend Server:</strong> Built with
+                                Node.js and Express. It utilizes <code>“@serialport/parser-readline”</code> to cleanly
+                                capture incoming data streams, host the server locally on port <code>“3000”</code>, and
+                                handle asynchronous system tasks.</li>
+                                <li><strong>Communicatoin Layer (Socket.io):</strong> Establishes an active WebSocket link to instantly push remote strings(<code>"UP"</code>,
+                                <code>"RI"</code>, <code>"BA"</code>, <code>"1"</code>) from the server straight into
+                                the browser window with zero noticeable lag.</li>    
+                            </ol>
+                    </li>
+                </ul>   
+                <li><h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>Infinite Circular Grid Navigation:</strong> <br>
+                            The Struggle: Preventing navigation
+                            arrays from throwing errors or breaking layout flow when moving past boundaries
+                            <br><br>
+                            The Solution: Implementing
+                            cyclic array indexing mathematics. By applying the modulus remainder calculation,
+                            the cursor smoothly wraps around screen boundaries indefinitely.
+<pre class="code-box"><code class="language-javascript">if (cmd === 'RI') { // If index reaches the array length,
+the remainder snaps it back to 0 currentIndex = (currentIndex + 1) %
+items.length; } else if (cmd === 'LE') { // Adding items.length keeps the
+integer positive when moving backward past 0 currentIndex = (currentIndex - 1 +
+items.length) % items.length; }</code></pre>
+                        </li>
+                        <li>
+                            <strong>Native OS Key Interception & Library Deprecation:</strong> <br>
+                            The Struggle: Standard
+                            Node.js automated keyboard libraries require intensive native system dependencies
+                            (Python, C++ compliers) that cause major build crashes on standard Windows
+                            setups.
+                            <br><br>
+                            The Solution: Bypassing
+                            external libraries completely by running native, asynchronous Windows PowerShell
+                            sub-processes via Node’s <code>“child—process”</code> execution layer.
+<pre class="code-box"><code class="language-javascript">// Example from server.js firing raw virtual byte keys
+natively to Windows OS if (action === 'PLAY') { // Char 179 tells the system
+hardware kernel to trigger a global Play/Pause event exec(`powershell -c
+"(New-Object -ComObject WScript.Shell).SendKeys([char]179)"`); }</code></pre> 
+                        </li>
+                    </ol>
+                </li>
+                <li><h3>5. What I learned:</h3>
+                    <p>Through this project, I mastered the
+                    fundamentals of Event-Driven Architecture and Full-Stack JavaScript integration.
+                    I learned how to establish robust Serial Port pipelines between
+                    microcontrollers and backend engines, manipulate the web DOM dynamically based
+                    on hardware events, and utilize system shells to bridge separate desktop
+                    software ecosystems together under one remote control</p>
+                </li>
+            <li><h3>6. Screenshots</h3>
+                <div class="screenshots">
+                    <img src="Screenshot 2026-05-31 204001.png" alt="MISA Media Deck">
+                    <img src="Screenshot 2026-05-31 204029.png" alt="Split Screen">
+                    <img src="Screenshot 2026-05-31 204558.png" alt="Calculator">
+                    <video controls class="screenshot-img" title="Video Demonstration">
+                        <source src="Remote.mp4" type="video/mp4"> 
+                            Your browser does not support the video tag.
+                    </video>
+                </div>
+            </li>
+            </ul>
+            <div class="code">
+                <p>Want to Check the Code?</p>
+                <a href="https://github.com/MisaelCM950/Remote-Arduino-Project/tree/main"><img src="/Projects/GitHub Logo.png" alt=""></a>
+            </div>
+        </div>
+        <div id="lightbox" class="lightbox">
+            <span title="Close" class="close-btn">&times;</span>
+            <img class="lightbox-content" id="lightbox-img" src="" alt="">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+</html>

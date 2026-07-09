@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThoughtMatch</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+            <a href="/index.html" class="nav-link">Home</a>
+            <a href="" class="nav-link">Story</a>
+            <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <div style="margin-bottom: 25px;">
+    
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h2 style="margin: 0;">5. ThoughtMatch</h2>
+                <img src="ThoughtMatchLogo.jpeg" alt="ThoughtMatch Logo" style="width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            </div>
+            
+            <div style="color: #6b7280; font-size: 0.95rem; font-weight: 500; margin-top: 8px;">
+                🗓️ Apr 27th – June 8th 2026
+            </div>
+
+        </div>
+            <ul>
+                <li><h3>1. What does the tool do?</h3>
+                    <p>ThoughtMatch is a real-time, profile-less, web application that utilizes machine learning and vector embeddings to instantly pair users based on shared, transient thoughts, dropping them into spontaneous, anonymous chat rooms.</p>
+                 </li>
+                <li><h3>2. Why I built it:</h3>
+                   <p>As someone grinding through late-night coding sessions and SAT prep, I realized how isolating solo learning can be. I wanted an anti-social-media platform where connection is based purely on a shared mental wavelength rather than curated profiles. I built this to push my full-stack engineering limits—transitioning from front-end interfaces to mastering backend architectures, real-time database replication, and complex security protocols—proving I can architect scalable, secure systems from scratch.</p>
+                </li>
+                <li><h3>3. How it works:</h3>
+                <ul>
+                    <li><strong>For the user:</strong> <br>
+                        <ul style="list-style:disc; padding-left: 30px;">
+                            <li><strong>Intent-Based Matching:</strong> Users type a transient thought. The system instantly checks for active users on a similar wavelength. If no human match is found, the user can pivot to chatting with an AI fallback.</li>
+                            <li><strong>Real-Time Ephemeral Chat:</strong> Upon a successful match, users receive an instant push notification and are dropped into a live chat room.</li>
+                            <li><strong>Safety & Moderation:</strong> Users can terminate the chat instantly, report inappropriate behavior, and start a new session without friction.</li>
+                        </ul>
+                    </li>
+                        
+                    <li><strong>Technical Architecture & Orchestration:</strong><br>
+                        The application is built on React Native and TypeScript (compiled for Web via Expo and hosted on Vercel), utilizing a highly decoupled backend architecture:
+                            <ul style="list-style:disc; padding-left: 30px;">
+                                <li><strong>Supabase (PostgreSQL):</strong> Serves as the real-time core, managing user state, active rooms, and live message broadcasting.</li>
+                                <li><strong>OpenAI Embeddings API:</strong> Converts unstructured user thoughts into high-dimensional mathematical vectors to understand semantic intent.</li>
+                                <li><strong>Supabase Edge Functions:</strong> Serverless functions that orchestrate the matching logic—triggering the OpenAI API, querying the database, and pairing users—without blocking the main thread.</li>
+                                <li><strong>Real-Time Websockets:</strong> Utilizes Supabase’s real-time channels to push database inserts (new messages) directly to the client UI with zero latency.</li>
+                            </ul>
+                    </li>
+                </ul>   
+                </li>
+                <li><h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>Real-Time State Jitter & Race Conditions (Optimistic UI)</strong><br>
+                            <strong>The problem:</strong> In a real-time messaging application, waiting for a round-trip database response before displaying a sent message creates a laggy UI. However, implementing <code>Optimistic Updates</code> (displaying the message locally immediately) creates a race condition; when the database insert succeeds, Supabase broadcasts the message back to the sender via a WebSocket channel. If not handled, this causes a duplicate rendering bug where the same message is attached twice.<br>
+                            <strong>The solution:</strong> In the <code>useChatRoom</code> hook, I solved this by assigning a temporary ID and a status of <code>sending</code> to the local optimistic state. When the real-time WebSocket channel broadcasts the database insertion payload, the hook filters out the temporary optimistic message from the state array before attaching the official database record, creating a seamless, duplicate-free transition.
+<pre class="code-box">
+<code class="language-javascript">// 1. Instantly render an optimistic message locally with a temporary 'sending' status
+const optimisticMessage = {
+    id: tempId,
+    content: textToSend,
+    user_id: currentUser.id,
+    room_id: String(roomId),
+    created_at: new Date().toISOString(),
+    status: 'sending'
+};
+setMessages((current) => [optimisticMessage, ...current]);
+
+// 2. Filter out the optimistic message when the database broadcast returns
+channel = supabase
+    .channel(`room-${roomId}`)
+    .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+            setMessages((current) => {
+                // Filter out the local sending indicator matching the incoming content
+                const filtered = current.filter(msg => !(msg.status === 'sending' && msg.content === payload.new.content));
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                return [payload.new, ...filtered]
+            })
+        }
+    )
+    .subscribe();</code>
+</pre>
+                        </li>
+                        <li>
+                            <strong>Database Security:</strong> Securing the data was a major challenge. Supabase Row Level Security (RLS) policies were a headache. I had situations where policies were blocking the information that other users needed, and situations where they weren’t blocking information that needed to be private. Not having this directly in the code made it difficult to identify; I thought I had bugs in my code, but it was the policies.<br>
+                            <strong>Solution:</strong> I had a penetration test that showed my app’s vulnerability. I used Postman to run penetration tests on my own backend to ensure my security policies were working without breaking the app’s functionality.
+                        </li>
+                        <li>
+                            <strong>Supabase Architecture:</strong> Using Supabase overall was challenging because it was my first time learning about real-time replication, RLS policies, Edge Functions, and using SQL to create and modify tables. Getting the database architecture right and safe for users was tough.
+                        </li>
+                        <li>
+                            <strong>TypeScript:</strong> Reading and writing the TypeScript syntax was challenging, but I am continuously improving my programming logic to read the code better.
+                        </li>
+                        <li>
+                            <strong>Matching Logic:</strong><br>
+                            <strong>The problem:</strong> Designing a matching system for a network of active users presents a dilemma; if semantic matching thresholds are too loose, users are paired with irrelevant thoughts; if thresholds are too strict, empty queues leave users isolated.<br>
+                            <strong>The solution:</strong> The match-thought edge function converts the user’s thought into a 1536-dimensional vector embedding using OpenAI’s API, then queries the PostgreSQL database via an RPC function <code>match-thoughts</code> utilizing the <code>pgvector</code> extension to calculate cosine similarity. If no human candidate meets the semantic threshold, the system pivots to an AI Reflection Buddy. To maintain immersion, the AI is prompted with custom simulation constraints to generate a natural counter thought matching the user’s vibe, rather than a boilerplate assistant reply.
+<pre class="code-box">
+<code class="language-javascript">// 1. Query PGVector similarity matching using supabase RPC database call
+const { data: matches, error: matchError } = await supabaseClient.rpc('match_thoughts', {
+  query_embedding: embedding,
+  match_threshold: 0.0, // Retrieve broad pool to evaluate
+  match_count: 20,     
+  current_user_id: userId,
+})
+
+if (matchError) throw matchError
+
+let finalizedMatch = null;
+if (matches && matches.length > 0) {
+  const humanMatches = matches.filter((m: any) => !m.is_ai_bot);
+  for (const item of humanMatches) {
+    // Enforce strict semantic similarity threshold of 0.40
+    if (item.similarity >= targetThreshold) {
+      finalizedMatch = item;
+      break;
+    }
+  }
+}
+
+// 2. Dynamic generative fallback if no human match is active
+if (!finalizedMatch && forceAIFallback) {
+  const aiBotUserId = "80c65ed7-9758-4a19-8862-072c197463cd";
+  const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini', 
+      messages: [
+        { 
+          role: 'system', 
+          content: `You are a real human user posting a thought on a social connection app named ThoughtMatch. 
+        Your primary goal is to write a short, single-sentence personal thought of your own that shares a SIMILAR topic, vibe, or situation as the input thought, but phrased completely differently as your own separate experience.
+        
+        CRITICAL SIMULATION RULES:
+        1. DO NOT reply to the user's thought in this initial generation.
+        2. DO NOT address the user (No "Happy birthday", no "Good luck with that", no "I agree with you").
+        3. Speak in the first person ("I am...", "My...", "Just..."). informal, organic, max 15 words.` 
+        },
+        { role: 'user', content: `Generate a matching thought response for this user input: "${thought}"` }
+      ],
+      temperature: 0.7,
+    }),
+  });
+  
+  const aiChatResult = await aiResponse.json();
+  const aiGeneratedThought = aiChatResult.choices[0].message.content.trim().replace(/^"|"$/g, '');
+  
+  finalizedMatch = {
+    user_id: aiBotUserId,
+    content: aiGeneratedThought
+  };
+}</code>
+</pre>
+                        </li>
+                        <li>
+                            <strong>Product Management:</strong> Thinking through the different ways the app could work from a user's perspective was tough. I had to think like a real user to design the architecture, the rules, and the right features.
+                        </li>
+                    </ol>
+                </li>
+                <li><h3>5. What I learned:</h3>
+                    <ul style="list-style:disc; padding-left: 30px;">
+                        <li><strong>Database Architecture:</strong> I transitioned from frontend-only development to true full-stack architecture. I mastered setting up PostgreSQL schemas, utilizing <code>pgvector</code> for machine learning tasks, and writing complex SQL functions.</li>
+                        <li><strong>Security & RLS:</strong> I learned the critical importance of Zero-Trust architecture, writing database-level policies that secure data regardless of frontend vulnerabilities.</li>
+                        <li><strong>Real-Time Systems:</strong> I learned how to manage WebSocket connections, handle state updates dynamically, and orchestrate serverless Edge Functions to handle heavy backend logic.</li>
+                        <li><strong>Product Marketing:</strong> Building the app was only 50% of the battle. I learned to step into the role of a founder—editing promotional videos, creating hooks, and navigating social media algorithms to acquire real users.</li>
+                    </ul>
+                </li>
+            <li><h3>6. Screenshots</h3>
+                <div class="screenshots">
+                    <img src="560shots_so.png" alt="ThoughtMatch Chat Room">
+                    <img src="664shots_so.png" alt="ThoughtMatch Main Screen">
+                    <img src="885shots_so.png" alt="ThoughtMatch Dashboard">
+                    <img src="966shots_so.png" alt="ThoughtMatch Option">
+                </div>
+            </li>
+            </ul>
+            <div class="project-footer" style="margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
+                
+                <div class="external-links" style="margin-bottom: 20px;">
+                    <h3>Links</h3>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 10px;">
+                            💻 <a href="https://www.thoughtmatch.site/" target="_blank" style="text-decoration: none; color: #146965; font-weight: bold;">Live Website</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🚀 <a href="https://www.producthunt.com/products/thoughtmatch" target="_blank" style="text-decoration: none; color: #4e5704; font-weight: bold;">Product Hunt Launch</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <img src="/Projects/youtube-logo.png" alt="youtube-logo" style="max-width: 20px; height: auto;"> <a href="https://youtu.be/4T6r3R08TW8?si=UHdFZGF8lxjWRAY8" target="_blank" style="text-decoration: none; color: #187e3a; font-weight: bold;">ThoughtMatch Demo Video</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            📸 <a href="https://www.instagram.com/thoughtmatchapp?igsh=azZra2N2Y2ZzMWp5&utm_source=qr" target="_blank" style="text-decoration: none; color: #E1306C; font-weight: bold;">ThoughtMatch Instagram Account</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            👾 <a href="https://www.reddit.com/r/SideProject/comments/1tqo2pr/i_built_an_app_where_you_type_a_raw_personal/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button" target="_blank" style="text-decoration: none; color: #FF4500; font-weight: bold;">Reddit Launch Post</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <img src="/Projects/GitHub Logo-two.png" alt="git-hub-logo" style="max-width: 20px; height: auto;"> <a href="https://github.com/MisaelCM950/ThoughtMatch" target="_blank" style="text-decoration: none; color: #1d4bc9; font-weight: bold;">GitHub Repository</a>
+                        </li>
+                    </ul>
+                </div>                
+            </div>
+        </div>
+        
+    </div>
+        </div>
+        
+    </div>
+    <div id="lightbox" class="lightbox">
+        <span title="Close" class="close-btn">&times;</span>
+        <img src="" alt="" class="lightbox-content" id="lightbox-img">
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstudIAmigo | Innovathon 2026</title> 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav> 
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="" class="nav-link">Story</a>
+        <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+            
+            <div style="margin-bottom: 25px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 style="margin: 0;">6. EstudIAmigo</h2>
+                    <img src="logo.png" alt="EstudIAmigo Logo" style="width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+
+                <div style="color: #6b7280; font-size: 0.95rem; font-weight: 500; margin-top: 8px;">
+                    🗓️ June 12th – June 14th 2026
+                </div>
+            </div>
+
+            <ul>
+                <li><h3>What does the tool do?</h3>
+                    <p>EstudIAmigo is an interactive, AI-driven mathematics learning platform that transforms static study materials (such as uploaded PDFs) into dynamic, personalized roadmaps. Designed around active recall principles, the platform integrates the Feynman Technique as a core mechanic: to advance through levels, users cannot simply select an answer; they must explain the underlying logic of their solution in their own words. The platform evaluates their conceptual understanding, guides them through errors with targeted questioning, and dynamically generates custom vector geometry images using inline SVG rendering to keep study sessions interactive and visually engaging.</p>
+                </li>
+
+                <li><h3>Why I built it?</h3>
+                    <p>I built EstudIAmigo during my first hackathon, Innovathon 2026, hosted by the Universidad Tecnológica de Chihuahua (UTCH). Having spent months self-studying for the SAT to apply to universities, I experienced firsthand how isolating, dry, and passive traditional learning resources can be. I wanted to design an educational platform that shifts the learning paradigm from memorization to active teaching.</p>
+                    <p>Collaborating in a team of four, I took the lead in architecting the core platform. The project was an intense sprint to push my technical limits: building a complete platform under a strict 48-hour limit, mastering AI agent prompting, and parsing raw PDF documents into structured roadmaps.</p>
+                </li>
+
+                <li><h3>How it works:</h3>
+                    <ul>
+                        <li><strong>For the user:</strong>
+                            <ul style="list-style:disc; padding-left: 30px;">
+                                <li><strong>Dynamic roadmaps:</strong> The user uploads a study document (e.g., a PDF textbook on fractions and geometry). The system extracts the text, analyzes the topics, and generates a structured 6-level learning path going from basic concepts to advanced applications.</li>
+                                <li><strong>The Feynman Active Learning Loop:</strong> In each level, the AI presents a math problem. When the user provides an answer, the interface prompts them to explain their reasoning. The user must articulate their mathematical process to proceed, transforming passive reading into active teaching.</li>
+                                <li><strong>Socratic Dialogue Guidance:</strong> If the user’s explanation is mathematically incomplete or incorrect, the AI acts as a Socratic tutor—asking guiding questions rather than simply revealing the final answer.</li>
+                                <li><strong>Dynamic Visual Geometry:</strong> For geometry modules, the application renders interactive vector images directly in the chat window, providing visual context for problems that need it.</li>
+                                <li><strong>Free-Form Socratic Chat:</strong> Students can initiate open study sessions without uploading a document, utilizing image uploads to get step-by-step explanations of photographed equations.</li>
+                            </ul>
+                        </li>
+                    </ul>   
+                </li>
+
+                <li><h3>Technical Architecture & Orchestration:</h3>
+                    <p>The application is built using a client-server architecture designed for high-throughput text and image processing:</p>
+                    <ul style="list-style:disc; padding-left: 30px;">
+                        <li><strong>Next.js & React (Typescript):</strong> Powers the front-end dashboard, featuring a custom, animated zig-zag learning path, dynamic LaTeX mathematical rendering via KaTex and Markdown, and responsive layouts styled with TailwindCSS.</li>
+                        <li><strong>Node.js & Express Backend:</strong> Manages file ingestion payloads, coordinates PDF parsing pipelines, and structures prompts for LLM execution.</li>
+                        <li><strong>OpenAI GPT-4o-mini API:</strong> Serves as the cognitive tutor. It evaluates user inputs, maintains the state of the Socratic dialogue, and generates structured JSON roadmaps.</li>
+                        <li><strong>Pdf2json Library:</strong> Extracts raw text content from base64-encoded PDF payloads transmitted from the client, feeding clean textual summaries into the LLM context.</li>
+                    </ul>
+                </li>
+
+                <li><h3>Technical challenges:</h3>
+                    <ol>
+                        <li><strong>Level Progression State Synchronization & Clean History Reset:</strong><br>
+                            <strong>The problem:</strong> In a structured learning path, the system must synchronize the backend’s evaluation of the user’s progress with the frontend’s visual roadmap. A major issue arose during level transitions: if the entire chat history from the previous level was sent in subsequent API requests, the LLM became highly prone to context leakage—combining past math problems with new topics, breaking its internal state machine, and failing to raise the difficulty of the next level.<br>
+                            <strong>The solution:</strong> I designed a token-based handshake protocol between the client and the server. When the backend determines that the user has successfully explained the concept, it attaches a hidden token <code>[TEMA_APROBADO]</code> to its response and updates the roadmap nodes. The frontend intercepts this response, strips the token from the visible message, and renders a Next Level call-to-action button. When clicked, the client updates the local learning path state, clears the message array, and initiates a clean API call with an empty history array (<code>history: []</code>) and the new topic. This keeps the LLM’s context window focused and error-free.
+<pre class="code-box"><code class="language-javascript">// 1. Intercept the approval token in the API response and strip it from the user-facing UI
+const hasApproved = data.explanation.includes("[TEMA_APROBADO]");
+const cleanContent = hasApproved
+  ? data.explanation.replace("[TEMA_APROBADO]", "").trim()
+  : data.explanation;
+
+// 2. Clear history and transition the user to the next topic cleanly
+async function handleNextLevel() {
+  setShowNextLevelButton(false);
+  setMessages([]); 
+  const response = await fetch(`${API_URL}/api/explain`, {
+      method: "POST",
+      body: JSON.stringify({ history: [], topic: nextTopic }),
+  });
+}</code></pre>
+                        </li>
+                        <li><strong>Structuring and PDF extraction:</strong><br>
+                            <strong>The problem:</strong> Generating a structured roadmap requires parsing raw text from a PDF, extracting core mathematical concepts, and forcing the LLM to return a strict JSON schema containing exactly 6 levels alternating between Fractions and Geometry. However, LLMs are inherently conversational and frequently wrap JSON outputs in Markdown code blocks (e.g., ```json…```) or attach introductory text, causing native JSON.parse operations to throw critical syntax errors and crash the application.<br>
+                            <strong>The solution:</strong> I implemented <code>cleanJsonOutput</code>. Instead of relying solely on system prompts to enforce formatting, this function scans the raw string return, locates the first opening curly brace `{` and the final closing curly brace `}`, and extracts the precise substring between them. This approach ensures that even if the LLM surrounds the JSON with conversational text or markdown blocks, the application isolates and parses properly.
+<pre class="code-box"><code class="language-javascript">function cleanJsonOutput(content) {
+  const start = content.indexOf('{');
+  const end = content.lastIndexOf('}');
+  if (start === -1 || end === -1) return null;
+  try {
+    return JSON.parse(content.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}</code></pre>
+                        </li>
+                    </ol>
+                </li>
+
+                <li><h3>What I learned:</h3>
+                    <ul style="list-style:disc; padding-left: 30px;">
+                        <li><strong>Collaborative Git Project management:</strong> Moving from solo development to a high-pressure team of four, I learned to coordinate git branches, handle merge conflicts, split front and backend responsibilities, and maintain constant communication.</li>
+                        <li><strong>AI-Augmented Development & Recovery:</strong> Working through hackathon stress, including recovering from a major code loss, taught me how to utilize agentic AI coding assistants (like Google Antigravity and Copilot) to build, refactor, and debug the application at rapid speeds.</li>
+                        <li><strong>Pitching & Business Viability:</strong> Beyond the code, I gained valuable insights into creating a business model and structuring a compelling product pitch from local industry mentors, bridging the gap between engineering and product design.</li>
+                        <li><strong>LLMs:</strong> I mastered advanced prompt engineering, learning to structure system instructions.</li>
+                        <li><strong>Path UI & Mathematical Grids:</strong> I integrated complex UI components using Tailwind CSS “clip-path,” managing the geometric logic to ensure the roadmap path visually synchronized with the backend level progression.</li>
+                        <li><strong>Recovery Under Pressure:</strong> When I lost 2 hours of work, I had to pivot from frustration to rapid reconstruction—this was my biggest growth moment in technical resilience.</li>
+                    </ul>
+                </li>
+
+                <li><h3>Builder Mindset:</h3>
+                    <p>During Innovathon 2026, I discovered my identity as a Builder. While the hackathon setting was collaborative, I found myself compelled to move from ideation to implementation immediately. While my team was still brainstorming, I began architecting the platform. I learned that my strength lies in rapid prototyping—taking a vision and driving it toward a functional MVP using AI-augmented development (leveraging Copilot and LLM agents) to handle boilerplate, which allowed me to focus on high-level orchestration and logic.</p>
+                </li>
+
+                <li><h3>6. Screenshots</h3>
+                <div class="screenshots">
+                    <img src="Screenshot 2026-06-24 203648.png" alt="Main screen">
+                    <img src="Screenshot 2026-06-24 203658.png" alt="chat screen">
+                    <img src="Screenshot 2026-06-24 203707.png" alt="loading study material">
+                    <img src="Screenshot 2026-06-24 203724.png" alt="passed level">
+                    <img src="Screenshot 2026-06-24 203741.png" alt="geometry svg">
+                </div>
+            </li>
+            </ul>
+
+            <div class="project-footer" style="margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
+                <div class="external-links" style="margin-bottom: 20px;">
+                    <h3>Links</h3>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 10px;">
+                            💻 <a href="https://innovathon-2026-yorhacks.vercel.app/" target="_blank" style="text-decoration: none; color: #146965; font-weight: bold;">Live Website</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                             🖼️<a href="https://jackal-elm-282.faces.site/r5o3i1yjk09b" target="_blank" style="text-decoration: none; color: #4e5704; font-weight: bold;">Hackathon Presentation</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <img src="/Projects/youtube-logo.png" alt="youtube-logo" style="max-width: 20px; height: auto;"> <a href="https://youtu.be/gAWKSZklx7c" target="_blank" style="text-decoration: none; color: #187e3a; font-weight: bold;">EstudIAmigo Demo Video</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            📸 <a href="https://innovathon.innovacuu.xyz/galeria" target="_blank" style="text-decoration: none; color: #E1306C; font-weight: bold;">Hackathon Gallery</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <img src="/Projects/GitHub Logo-two.png" alt="git-hub-logo" style="max-width: 20px; height: auto;"> <a href="https://github.com/xx7yy7zz/innovathon-2026-yorhacks" target="_blank" style="text-decoration: none; color: #1d4bc9; font-weight: bold;">GitHub Repository</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="lightbox" class="lightbox">
+        <span title="Close" class="close-btn">&times;</span>
+        <img src="" alt="" class="lightbox-content" id="lightbox-img">
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+</html>

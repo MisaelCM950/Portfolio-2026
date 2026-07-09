@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Blocker</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav>
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="" class="nav-link">Story</a>
+        <a href="/Projects/index.html" class="nav-link">Projects</a>
+    </nav>
+
+    <div class="projects">
+        <div class="project-container">
+
+            <div style="margin-bottom: 25px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 style="margin: 0;">6. Ad Blocker</h2>
+                    <img src="AdBlockerLogo.png" alt="Ad Blocker Logo" style="width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                </div>
+
+                <div style="color: #6b7280; font-size: 0.95rem; font-weight: 500; margin-top: 8px;">
+                    🗓️ July 2026
+                </div>
+            </div>
+
+            <ul>
+                <li>
+                    <h3>1. What does the tool do?</h3>
+                    <p>Ad Blocker is a lightweight Chrome extension that removes visual ad elements from websites, creating a distraction-free browsing experience. Unlike traditional ad blockers that block requests at the network level, this extension hides ad containers after they load. That keeps websites functional while removing the visual clutter.</p>
+                </li>
+
+                <li>
+                    <h3>2. Why I built it:</h3>
+                    <p>I use Oxford Dictionary frequently while studying, and the ads on the site were often distracting and disruptive. I wanted a cleaner browsing experience without breaking the website itself. When I realized that many popular ad blockers either had paywalls or triggered anti-adblock warnings on Oxford’s site, I decided to build my own. This project also fit naturally into my broader goal of building practical tools for my personal website, sci-fi.site.</p>
+                </li>
+
+                <li>
+                    <h3>3. How it works:</h3>
+                    <ul>
+                        <li><strong>For the user:</strong>
+                            <ul style="list-style: disc; padding-left: 30px;">
+                                <li><strong>One-click toggle:</strong> Click the extension icon to open a popup with a large power button. The button shows the current status and changes color depending on whether the blocker is enabled.</li>
+                                <li><strong>Persistent state:</strong> The toggle preference is saved locally, so it remembers the user’s choice across sessions.</li>
+                                <li><strong>Silent operation:</strong> The extension works across most websites, except on platforms like YouTube or Gemini where the experience should remain intact.</li>
+                            </ul>
+                        </li>
+
+                        <li><strong>Technical Architecture & Orchestration:</strong>
+                            <ul style="list-style: disc; padding-left: 30px;">
+                                <li><strong>manifest.json:</strong> The extension’s configuration file. It specifies permissions, defines the popup UI, registers content scripts, and excludes sites where the blocker should remain inactive.</li>
+                                <li><strong>content.js:</strong> This is the main logic of the extension. It reads the saved enabled/disabled state from <code>chrome.storage.local</code>, scans the DOM for ad-like elements, and hides them by toggling a CSS class.</li>
+                                <li><strong>content.css:</strong> This file contains the CSS rules that actually hide the selected elements when the extension is active.</li>
+                                <li><strong>popup.html / popup.js / popup.css:</strong> These files control the popup interface and allow the user to turn the blocker on and off.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <li>
+                    <h3>4. Technical Challenges:</h3>
+                    <ol>
+                        <li>
+                            <strong>Anti-adblock Detection (The Oxford Dictionary Problem)</strong><br>
+                            <strong>The problem:</strong> Oxford Dictionary and similar sites use anti-adblock scripts that detect when requests are blocked or ads fail to render. Early network-blocking approaches triggered these warnings and disrupted the experience.<br>
+                            <strong>The solution:</strong> Instead of blocking ad requests, I shifted to a post-load hiding strategy. The extension allows ad elements to load normally, then hides them through CSS and DOM manipulation. From the server’s perspective, the ads still load, but the user does not see them.
+<pre class="code-box">
+<code class="language-javascript">
+// hideElement checks for ad-like attributes and hides the wrapper
+const hideElement = (el) => {
+  let text = `${el.id || ''} ${el.className || ''} ${el.getAttribute('role') || ''} ${el.getAttribute('aria-label') || ''}`.toLowerCase();
+
+  const adPattern = /(ad|advert|sponsor|promo|banner)/i;
+  if (adPattern.test(text)) {
+    const wrapper = el.closest('[class*="ad"], [id*="ad"]') || el;
+    wrapper.classList.add('adblocker-hidden');
+  }
+};
+</code>
+</pre>
+                        </li>
+
+                        <li>
+                            <strong>Site Breakage on Ad-Dependent Platforms (The YouTube Problem)</strong><br>
+                            <strong>The problem:</strong> On platforms like YouTube, ads are part of the service and blocking them can break the experience. The extension also risked hiding non-ad elements that used similar class names.<br>
+                            <strong>The solution:</strong> I added <code>exclude_matches</code> to the manifest so the extension stays inactive on specific sites where it would be disruptive.
+<pre class="code-box">
+<code class="language-json">
+"content_scripts": [
+  {
+    "matches": ["&lt;all_urls&gt;"],
+    "exclude_matches": [
+      "*://*.youtube.com/*",
+      "*://youtube.com/*",
+      "*://*.gemini.google.com/*"
+    ],
+    "css": ["content.css"],
+    "js": ["content.js"]
+  }
+]
+</code>
+</pre>
+                        </li>
+                    </ol>
+                </li>
+
+                <li>
+                    <h3>5. What I learned:</h3>
+                    <ul style="list-style: disc; padding-left: 30px;">
+                        <li><strong>Chrome Extension Architecture:</strong> I learned how to work with the manifest-driven model, content scripts, popup UI, and persistent storage.</li>
+                        <li><strong>Detection vs. Blocking:</strong> I learned the difference between network-level ad blocking and DOM-level hiding, and why the latter is more reliable for this use case.</li>
+                        <li><strong>MutationObserver and Dynamic Content:</strong> I learned how to respond to new content loading dynamically on modern websites.</li>
+                        <li><strong>GitHub Workflows:</strong> I created a release pipeline, packaged the extension as a ZIP, and wrote documentation for users.</li>
+                        <li><strong>Graceful Degradation:</strong> I learned how to design an extension that improves the experience without breaking the websites it runs on.</li>
+                    </ul>
+                </li>
+
+                <li>
+                    <h3>6. Screenshots</h3>
+                    <div class="screenshots">
+                        <img src="adblocker-popup.png" alt="Ad Blocker Popup">
+                        <img src="adblocker-enabled.png" alt="Ad Blocker Enabled">
+                        <img src="adblocker-disabled.png" alt="Ad Blocker Disabled">
+                    </div>
+                </li>
+            </ul>
+
+            <div class="project-footer" style="margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px;">
+                <div class="external-links" style="margin-bottom: 20px;">
+                    <h3>Links</h3>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin-bottom: 10px;">
+                            💻 <a href="https://www.sci-fi.site/Adblocker/" target="_blank" style="text-decoration: none; color: #146965; font-weight: bold;">Live Website</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            📦 <a href="https://github.com/MisaelCM950/AdBlocker/releases/tag/v1.0" target="_blank" style="text-decoration: none; color: #4e5704; font-weight: bold;">GitHub Release</a>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <img src="/Projects/GitHub Logo-two.png" alt="git-hub-logo" style="max-width: 20px; height: auto;"> <a href="https://github.com/MisaelCM950/AdBlocker" target="_blank" style="text-decoration: none; color: #1d4bc9; font-weight: bold;">GitHub Repository</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="lightbox" class="lightbox">
+        <span title="Close" class="close-btn">&times;</span>
+        <img src="" alt="" class="lightbox-content" id="lightbox-img">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="/lightbox.js"></script>
+</body>
+</html>
