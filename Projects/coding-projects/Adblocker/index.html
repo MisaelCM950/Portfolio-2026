@@ -20,11 +20,11 @@
             <div style="margin-bottom: 25px;">
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <h2 style="margin: 0;">6. Ad Blocker</h2>
-                    <img src="AdBlockerLogo.png" alt="Ad Blocker Logo" style="width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <img src="logoadblocker - Copy.png" alt="Ad Blocker Logo" style="width: 50px; height: 50px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 </div>
 
                 <div style="color: #6b7280; font-size: 0.95rem; font-weight: 500; margin-top: 8px;">
-                    🗓️ July 2026
+                    🗓️ June 30th - July 5th 2026
                 </div>
             </div>
 
@@ -89,7 +89,7 @@ const hideElement = (el) => {
                             <strong>The problem:</strong> On platforms like YouTube, ads are part of the service and blocking them can break the experience. The extension also risked hiding non-ad elements that used similar class names.<br>
                             <strong>The solution:</strong> I added <code>exclude_matches</code> to the manifest so the extension stays inactive on specific sites where it would be disruptive.
 <pre class="code-box">
-<code class="language-json">
+<code class="language-javascript">
 "content_scripts": [
   {
     "matches": ["&lt;all_urls&gt;"],
@@ -122,9 +122,10 @@ const hideElement = (el) => {
                 <li>
                     <h3>6. Screenshots</h3>
                     <div class="screenshots">
-                        <img src="adblocker-popup.png" alt="Ad Blocker Popup">
-                        <img src="adblocker-enabled.png" alt="Ad Blocker Enabled">
-                        <img src="adblocker-disabled.png" alt="Ad Blocker Disabled">
+                        <img src="interface-adblocker.png" alt="Ad Blocker interface">
+                        <img src="interface-adblockertwo.png" alt="Ad Blocker interface">
+                        <img src="sci-fi.png" alt="sci-fi.site">
+                        <img src="homepage.png" alt="sci-fi.site">
                     </div>
                 </li>
             </ul>
