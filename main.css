@@ -156,3 +156,40 @@ pre{
 li{
     margin-bottom: 10px;
 }
+
+#nav-placeholder-message {
+    position: fixed;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    background: rgba(163, 31, 52, 0.96);
+    color: #ffffff;
+    padding: 12px 24px;
+    border-radius: 999px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    z-index: 3000;
+    animation: navMessageFade 2.2s ease forwards;
+}
+
+@keyframes navMessageFade {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 18px);
+    }
+    15% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+    80% {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+}

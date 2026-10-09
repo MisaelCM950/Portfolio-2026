@@ -2,23 +2,37 @@ const lightBox = document.getElementById('lightbox');
 const lightBoxImg = document.getElementById('lightbox-img');
 const closeBtn = document.querySelector('.close-btn');
 
-// 1. Find all the images in the screenshot section
-document.querySelectorAll('.screenshots img').forEach(img => {
-    img.onclick =  () =>{
-        lightBox.style.display = 'flex';
-        lightBoxImg.src = img.src;
+const sectionLabels = {
+    home: 'Home',
+    story: 'Story',
+    awards: 'Awards'
+};
+
+document.querySelectorAll('.nav-link').forEach(link => {
+    const label = link.textContent.trim().toLowerCase();
+    if (sectionLabels[label]) {
+        const sectionName = sectionLabels[label];
+        link.href = `/under-construction.html?section=${encodeURIComponent(sectionName)}`;
     }
 });
 
-// 2. Hide the container when the x is clicked
-closeBtn.onclick = () =>{
-    lightBox.style.display = 'none';
-};
-// 3. Also hide the container if the black background is clicked
-lightBox.onclick = (e) =>{
-    if(e.target !== lightBoxImg){
-        lightBox.style.display = 'none';
-    }
-}
+if (lightBox && lightBoxImg) {
+    document.querySelectorAll('.screenshots img').forEach(img => {
+        img.onclick = () => {
+            lightBox.style.display = 'flex';
+            lightBoxImg.src = img.src;
+        };
+    });
 
-z``
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            lightBox.style.display = 'none';
+        };
+    }
+
+    lightBox.onclick = (e) => {
+        if (e.target !== lightBoxImg) {
+            lightBox.style.display = 'none';
+        }
+    };
+}
